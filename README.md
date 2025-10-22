@@ -2,7 +2,6 @@
 
 **Kelompok 4**  
 **Mata Kuliah:** Implementasi dan Pemeliharaan Perangkat Lunak (IMPAL)  
-**Dosen Pengampu:** _(isi jika diperlukan)_
 
 ---
 
