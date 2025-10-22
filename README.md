@@ -1,6 +1,5 @@
 # 📘 Tugas 5 IMPAL
-
-**Kelompok 4**  
+  
 **Mata Kuliah:** Implementasi dan Pemeliharaan Perangkat Lunak (IMPAL)  
 
 ---
