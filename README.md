@@ -1,6 +1,6 @@
-# 📘 Tugas 5 IMPAL
+# 📘 Tugas 5 IPPL
   
-**Mata Kuliah:** Implementasi dan Pemeliharaan Perangkat Lunak (IMPAL)  
+**Mata Kuliah:** Implementasi dan Pengujian Perangkat Lunak (IPPL)  
 
 ---
 
