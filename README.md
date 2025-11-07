@@ -17,4 +17,4 @@
 ### 🗂️ Diagram Tabel Sistem
 Berikut diagram tabel yang digunakan dalam sistem ini:
 
-<img src="./images/ERD.png" alt="Tabel Database" width="400"/>
+<img src="./images/ERD.jpg" alt="Tabel Database" width="400"/>
