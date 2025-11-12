@@ -1,110 +1,143 @@
--- Tabel utama untuk semua pengguna (kandidat, perusahaan, admin)
+SET time_zone = '+00:00';
+
 CREATE TABLE Users (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    user_type VARCHAR(50) NOT NULL COMMENT "'candidate', 'employer', or 'admin'",
-    account_status VARCHAR(50) NOT NULL DEFAULT 'active' COMMENT "'active', 'deactivated'",
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    user_type ENUM('disability', 'hr', 'company', 'admin') NOT NULL,
+    account_status ENUM('active', 'inactive', 'suspended') DEFAULT 'active',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Tabel untuk profil detail kandidat
+CREATE TABLE Company_Profiles (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    company_name VARCHAR(255) NOT NULL,
+    company_description TEXT,
+    company_address TEXT,
+    industry VARCHAR(100),
+    website_url VARCHAR(255),
+    company_logo_path VARCHAR(255),
+    disability_verified BOOLEAN DEFAULT FALSE,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE
+);
+
 CREATE TABLE Disability_Profiles (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    user_id INT UNIQUE NOT NULL,
+    user_id INT NOT NULL,
     full_name VARCHAR(255) NOT NULL,
-    phone_number VARCHAR(20),
     address TEXT,
-    about_me TEXT,
-    disability_type VARCHAR(100),
+    about_me VARCHAR(50),
+    disability_type ENUM(
+        'none',             
+        'low_vision',      
+        'color_blind',    
+        'dyslexia',         
+        'motor_disability', 
+        'blind',           
+        'cognitive'        
+    ) NOT NULL DEFAULT 'none',
     skills TEXT,
+    job_type ENUM(
+        'remote',          
+        'onsite',     
+        'hybrid',         
+        'desk_based',      
+        'field_work',     
+        'voice_based',    
+        'creative',       
+        'technical',      
+        'manual'          
+    ) NOT NULL DEFAULT 'remote',
+    education_level VARCHAR(50),
+    certif_file_path VARCHAR(255),
     cv_file_path VARCHAR(255),
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE
 );
 
--- Tabel untuk profil detail perusahaan
-CREATE TABLE Company_Profiles (
+CREATE TABLE HR_Profiles (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    user_id INT UNIQUE NOT NULL,
-    company_name VARCHAR(255) NOT NULL,
-    company_description TEXT,
-    industry VARCHAR(100),
-    company_address TEXT,
-    website VARCHAR(255),
-    company_logo_path VARCHAR(255),
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE
+    user_id INT NOT NULL,
+    company_id INT NOT NULL,
+    position_title VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE,
+    FOREIGN KEY (company_id) REFERENCES Company_Profiles(id) ON DELETE CASCADE
 );
 
--- Tabel untuk semua lowongan pekerjaan
 CREATE TABLE Jobs (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    employer_id INT NOT NULL,
+    company_id INT NOT NULL,
     title VARCHAR(255) NOT NULL,
-    description TEXT NOT NULL,
-    location VARCHAR(100),
-    job_type VARCHAR(50),
-    salary VARCHAR(100),
-    publication_status VARCHAR(50) DEFAULT 'open' COMMENT "'open', 'closed', 'removed'",
+    description TEXT,
+    jobdesk TEXT,
+    location VARCHAR(255),
+    job_type ENUM(
+        'remote',          
+        'onsite',     
+        'hybrid',         
+        'desk_based',      
+        'field_work',     
+        'voice_based',    
+        'creative',       
+        'technical',      
+        'manual'          
+    ) NOT NULL DEFAULT 'remote',
+    salary DECIMAL(15, 2),
+    minimum_education VARCHAR(50),
+    minimum_years_experience INT,
+    disability_type ENUM(
+        'none',             
+        'low_vision',      
+        'color_blind',    
+        'dyslexia',         
+        'motor_disability', 
+        'blind',           
+        'cognitive'        
+    ) NOT NULL DEFAULT 'none',
+    registration_deadline DATE,
+    publication_status ENUM('draft', 'published', 'closed') DEFAULT 'draft',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (employer_id) REFERENCES Users(id) ON DELETE CASCADE
+    update_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (company_id) REFERENCES Company_Profiles(id) ON DELETE CASCADE
 );
 
--- Tabel untuk mencatat lamaran dari kandidat ke pekerjaan
 CREATE TABLE Applications (
     id INT PRIMARY KEY AUTO_INCREMENT,
     job_id INT NOT NULL,
     candidate_id INT NOT NULL,
-    application_status VARCHAR(50) NOT NULL DEFAULT 'Submitted' COMMENT "'Submitted', 'Viewed', 'In Progress', 'Accepted', 'Rejected'",
+    application_status ENUM('pending', 'reviewed', 'shortlisted', 'rejected', 'accepted') DEFAULT 'pending',
+    hr_notes TEXT,
     applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    hr_notes TEXT COMMENT 'Feedback or comments from HR',
     FOREIGN KEY (job_id) REFERENCES Jobs(id) ON DELETE CASCADE,
-    FOREIGN KEY (candidate_id) REFERENCES Users(id) ON DELETE CASCADE,
-    UNIQUE (job_id, candidate_id)
+    FOREIGN KEY (candidate_id) REFERENCES Disability_Profiles(id) ON DELETE CASCADE
 );
 
--- Tabel untuk ulasan dari kandidat ke perusahaan
-CREATE TABLE Reviews (
+CREATE TABLE Experiences (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    reviewer_id INT NOT NULL,
-    reviewee_id INT NOT NULL,
-    rating INT,
-    review_content TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (reviewer_id) REFERENCES Users(id) ON DELETE CASCADE,
-    FOREIGN KEY (reviewee_id) REFERENCES Users(id) ON DELETE CASCADE
+    user_id INT NOT NULL,
+    position_title VARCHAR(255),
+    company_name VARCHAR(255),
+    start_date DATE,
+    end_date DATE,
+    FOREIGN KEY (user_id) REFERENCES Disability_Profiles(id) ON DELETE CASCADE
 );
 
--- Tabel untuk laporan dari pengguna terhadap perusahaan/lowongan
-CREATE TABLE Reports (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    reporter_id INT NOT NULL,
-    reported_company_id INT NOT NULL,
-    related_job_id INT,
-    reason TEXT NOT NULL,
-    report_status VARCHAR(50) NOT NULL DEFAULT 'Submitted' COMMENT "'Submitted', 'Under Review', 'Resolved'",
-    admin_notes TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (reporter_id) REFERENCES Users(id) ON DELETE CASCADE,
-    FOREIGN KEY (reported_company_id) REFERENCES Users(id) ON DELETE CASCADE,
-    FOREIGN KEY (related_job_id) REFERENCES Jobs(id) ON DELETE SET NULL
-);
-
--- Tabel untuk sistem chat
 CREATE TABLE Conversations (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE Conversation_Participants (
-    conversation_id INT NOT NULL,
-    user_id INT NOT NULL,
-    PRIMARY KEY (conversation_id, user_id),
-    FOREIGN KEY (conversation_id) REFERENCES Conversations(id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE
+    job_id INT NOT NULL,
+    company_id INT NOT NULL,
+    hr_user_id INT NOT NULL,
+    jobseeker_id INT NOT NULL,
+    status ENUM('active', 'closed') DEFAULT 'active',
+    started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_message_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (job_id) REFERENCES Jobs(id) ON DELETE CASCADE,
+    FOREIGN KEY (company_id) REFERENCES Company_Profiles(id) ON DELETE CASCADE,
+    FOREIGN KEY (hr_user_id) REFERENCES HR_Profiles(id) ON DELETE CASCADE,
+    FOREIGN KEY (jobseeker_id) REFERENCES Disability_Profiles(id) ON DELETE CASCADE
 );
 
 CREATE TABLE Messages (
@@ -116,3 +149,63 @@ CREATE TABLE Messages (
     FOREIGN KEY (conversation_id) REFERENCES Conversations(id) ON DELETE CASCADE,
     FOREIGN KEY (sender_id) REFERENCES Users(id) ON DELETE CASCADE
 );
+
+CREATE TABLE Reviews (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    reviewer_id INT NOT NULL,
+    reviewee_id INT NOT NULL,
+    related_job_id INT,
+    rating INT CHECK (rating >= 1 AND rating <= 5),
+    review_content TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (reviewer_id) REFERENCES Users(id) ON DELETE CASCADE,
+    FOREIGN KEY (reviewee_id) REFERENCES Users(id) ON DELETE CASCADE,
+    FOREIGN KEY (related_job_id) REFERENCES Jobs(id) ON DELETE SET NULL
+);
+
+CREATE TABLE Reports_User (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    related_job_id INT,
+    review_id INT,
+    reported_user_id INT NOT NULL,
+    reporter_id INT NOT NULL,
+    reason TEXT NOT NULL,
+    status ENUM('pending', 'reviewed', 'resolved', 'dismissed') DEFAULT 'pending',
+    admin_notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (related_job_id) REFERENCES Jobs(id) ON DELETE SET NULL,
+    FOREIGN KEY (review_id) REFERENCES Reviews(id) ON DELETE SET NULL,
+    FOREIGN KEY (reported_user_id) REFERENCES Users(id) ON DELETE CASCADE,
+    FOREIGN KEY (reporter_id) REFERENCES Users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE Blacklists (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    created_by INT NOT NULL,
+    reason TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE,
+    FOREIGN KEY (created_by) REFERENCES Users(id) ON DELETE CASCADE
+);
+
+-- optimization 
+
+CREATE INDEX idx_users_email ON Users(email);
+CREATE INDEX idx_users_user_type ON Users(user_type);
+CREATE INDEX idx_company_user_id ON Company_Profiles(user_id);
+CREATE INDEX idx_disability_user_id ON Disability_Profiles(user_id);
+CREATE INDEX idx_hr_user_id ON HR_Profiles(user_id);
+CREATE INDEX idx_hr_company_id ON HR_Profiles(company_id);
+CREATE INDEX idx_jobs_company_id ON Jobs(company_id);
+CREATE INDEX idx_jobs_status ON Jobs(publication_status);
+CREATE INDEX idx_applications_job_id ON Applications(job_id);
+CREATE INDEX idx_applications_candidate_id ON Applications(candidate_id);
+CREATE INDEX idx_experiences_user_id ON Experiences(user_id);
+CREATE INDEX idx_conversations_job_id ON Conversations(job_id);
+CREATE INDEX idx_messages_conversation_id ON Messages(conversation_id);
+CREATE INDEX idx_reviews_reviewer_id ON Reviews(reviewer_id);
+CREATE INDEX idx_reviews_reviewee_id ON Reviews(reviewee_id);
+CREATE INDEX idx_reports_reported_user_id ON Reports_User(reported_user_id);
+CREATE INDEX idx_blacklists_user_id ON Blacklists(user_id);
